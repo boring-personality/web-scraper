@@ -17,24 +17,25 @@ import (
 var visited = make(map[string]bool)
 
 func Crawl(link string, baseUrl string, wg *sync.WaitGroup) {
-	defer wg.Done()
 	if visited[link] {
+		fmt.Println("⏭️ Skipping already visited URL")
+		defer wg.Done()
 		return
 	}
 	visited[link] = true
-	// fmt.Println("Checking: ", link)
+	fmt.Println("📄 Internal page queued: ", link)
 	resp, err := http.Get(link)
 	if err != nil {
-		fmt.Println("Error getting url: ", link)
+		fmt.Println("❌ Failed to process: ", link)
+		defer wg.Done()
 		return
 	}
 
 	if resp.StatusCode != 200 {
-		fmt.Println("Invalid page:", link, "Status:", resp.StatusCode)
+		fmt.Println("❌ Invalid page:", link, "Status:", resp.StatusCode)
+		defer wg.Done()
 		return
 	}
-
-	fmt.Println("Valid page:", link)
 
 	body, _ := io.ReadAll(resp.Body)
 	node, _ := html.Parse(strings.NewReader(string(body)))
@@ -53,7 +54,9 @@ func Crawl(link string, baseUrl string, wg *sync.WaitGroup) {
 						wg.Add(1)
 						go Crawl(href, baseUrl, wg)
 					} else {
+						fmt.Println("🔗 External link queued:", href)
 						if visited[href] {
+							fmt.Println("⏭️ Skipping already visited URL")
 							continue
 						}
 						validator.ValidateExternalLink(href)
@@ -64,4 +67,5 @@ func Crawl(link string, baseUrl string, wg *sync.WaitGroup) {
 			}
 		}
 	}
+	defer wg.Done()
 }
