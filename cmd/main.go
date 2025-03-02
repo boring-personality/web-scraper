@@ -13,7 +13,7 @@ func main() {
 	var wg sync.WaitGroup
 	baseUrl, _ := url.Parse(URL)
 	fmt.Println("🔍 Scraping in progress")
-	// wg.Add(1)
+
 	crawler.Crawl(URL, baseUrl.Host, &wg)
 
 	wg.Wait()
