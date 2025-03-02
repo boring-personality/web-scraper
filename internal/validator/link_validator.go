@@ -17,6 +17,6 @@ func ValidateExternalLink(link string) {
 	if resp.StatusCode >= 400 {
 		fmt.Println("Invalid external link:", link, "Status:", resp.StatusCode)
 	} else {
-		fmt.Println("Valid external link:", link)
+		// fmt.Println("Valid external link:", link)
 	}
 }

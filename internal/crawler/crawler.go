@@ -8,6 +8,7 @@ import (
 	"scraper/internal/utils"
 	"scraper/internal/validator"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -15,12 +16,13 @@ import (
 
 var visited = make(map[string]bool)
 
-func Crawl(link string, baseUrl string) {
+func Crawl(link string, baseUrl string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	if visited[link] {
 		return
 	}
 	visited[link] = true
-	fmt.Println("Checking: ", link)
+	// fmt.Println("Checking: ", link)
 	resp, err := http.Get(link)
 	if err != nil {
 		fmt.Println("Error getting url: ", link)
@@ -31,6 +33,8 @@ func Crawl(link string, baseUrl string) {
 		fmt.Println("Invalid page:", link, "Status:", resp.StatusCode)
 		return
 	}
+
+	fmt.Println("Valid page:", link)
 
 	body, _ := io.ReadAll(resp.Body)
 	node, _ := html.Parse(strings.NewReader(string(body)))
@@ -46,10 +50,11 @@ func Crawl(link string, baseUrl string) {
 					}
 
 					if parsedLink.Host == baseUrl || parsedLink.Host == "" {
-						Crawl(href, baseUrl)
+						wg.Add(1)
+						go Crawl(href, baseUrl, wg)
 					} else {
 						if visited[href] {
-							return
+							continue
 						}
 						validator.ValidateExternalLink(href)
 						visited[href] = true
